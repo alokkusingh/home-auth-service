@@ -53,13 +53,16 @@ public class GoogleTokenValidatorService {
             String familyName = (String) payload.get("family_name");
             String givenName = (String) payload.get("given_name");
 
-            if (!"alok.ku.singh@gmail.com".equals(email))
-                throw new AuthenticationException(email + " is not authorized");
 
-            // Use or store profile information
-            // ...
-
-            return new UserInfo(userId, name, email, UserRole.ADMIN);
+            switch(email) {
+                case "alok.ku.singh@gmail.com" -> {
+                    return new UserInfo(userId, name, email, UserRole.ADMIN);
+                }
+                case "rachna2589@gmail.com" -> {
+                    return new UserInfo(userId, name, email, UserRole.USER);
+                }
+                default -> throw new AuthenticationException(email + " is not authorized");
+            }
 
         } else {
             System.out.println("Invalid ID token.");
