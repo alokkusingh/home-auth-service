@@ -9,4 +9,4 @@ server:
 oauth:
   google:
     client:
-      id: prod configured in Kuberentes ConfigMap. local configured as VM argument
+      id: prod configured in Kubernetes ConfigMap. local configured as VM argument

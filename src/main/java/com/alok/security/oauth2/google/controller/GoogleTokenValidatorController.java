@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.naming.AuthenticationException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.InvalidParameterException;
 
 @RequestMapping("/google/validate")
 @RestController
