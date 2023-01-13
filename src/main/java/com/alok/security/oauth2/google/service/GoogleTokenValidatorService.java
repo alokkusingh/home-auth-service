@@ -1,5 +1,7 @@
 package com.alok.security.oauth2.google.service;
 
+import com.alok.home.commons.exception.InvalidTokenException;
+import com.alok.home.commons.exception.UserNotAuthorizedException;
 import com.alok.security.model.UserInfo;
 import com.alok.security.model.UserRole;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
@@ -53,20 +55,19 @@ public class GoogleTokenValidatorService {
             String familyName = (String) payload.get("family_name");
             String givenName = (String) payload.get("given_name");
 
-
             switch(email) {
                 case "alok.ku.singh@gmail.com" -> {
                     return new UserInfo(userId, name, email, UserRole.ADMIN);
                 }
-                case "rachna2589@gmail.com" -> {
+                case "rachna2589@gmail.com", "a202.jyothigt@gmail.com" -> {
                     return new UserInfo(userId, name, email, UserRole.USER);
                 }
-                default -> throw new AuthenticationException(email + " is not authorized");
+                default -> throw new UserNotAuthorizedException(email + " is not authorized");
             }
 
         } else {
             System.out.println("Invalid ID token.");
-            throw new AuthenticationException("Invalid ID Token");
+            throw new InvalidTokenException("Token is either tampered/expired/wrong audience");
         }
 
     }

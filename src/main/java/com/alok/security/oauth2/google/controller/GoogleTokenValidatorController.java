@@ -1,5 +1,6 @@
 package com.alok.security.oauth2.google.controller;
 
+import com.alok.home.commons.exception.NotABearerTokenException;
 import com.alok.security.model.UserInfo;
 import com.alok.security.oauth2.google.service.GoogleTokenValidatorService;
 import org.springframework.http.ResponseEntity;
@@ -27,7 +28,7 @@ public class GoogleTokenValidatorController {
         if (bearerToken != null && bearerToken.startsWith("Bearer")) {
             token = bearerToken.substring(7, bearerToken.length());
         } else {
-            throw new InvalidParameterException("Token is not a valid Bearer token");
+            throw new NotABearerTokenException("Token is not a valid Bearer token");
         }
         return ResponseEntity.ok()
                 .body(googleTokenValidatorService.validateIdToken(token));
