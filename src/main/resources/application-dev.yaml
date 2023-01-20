@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: home-auth-service
+server:
+  port: 8082
+  servlet:
+    context-path: /home/auth
+
+oauth:
+  google:
+    client:
+      id: prod configured in Kubernetes ConfigMap. local configured as VM argument
