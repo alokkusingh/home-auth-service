@@ -1,9 +1,10 @@
-package com.alok.security.oauth2.google.service;
+package com.alok.security.token.service;
 
 import com.alok.home.commons.exception.InvalidTokenException;
 import com.alok.home.commons.exception.UserNotAuthorizedException;
-import com.alok.security.model.UserInfo;
-import com.alok.security.model.UserRole;
+import com.alok.security.dao.User;
+import com.alok.security.model.UserInfoResponse;
+import com.alok.security.repository.UserRepository;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
@@ -21,11 +22,14 @@ public class GoogleTokenValidatorService {
 
 
     private String goggleOauthClientId;
-
     private GoogleIdTokenVerifier verifier;
+    private UserRepository userRepository;
 
-    public GoogleTokenValidatorService(@Value("${oauth.google.client.id}") String goggleOauthClientId) throws GeneralSecurityException, IOException {
+    public GoogleTokenValidatorService(
+            @Value("${oauth.google.client.id}") String goggleOauthClientId,
+            UserRepository userRepository) throws GeneralSecurityException, IOException {
         this.goggleOauthClientId = goggleOauthClientId;
+        this.userRepository = userRepository;
 
         System.out.println("goggleOauthClientId: " + this.goggleOauthClientId);
         verifier = new GoogleIdTokenVerifier.Builder(GoogleNetHttpTransport.newTrustedTransport(), JacksonFactory.getDefaultInstance())
@@ -37,7 +41,7 @@ public class GoogleTokenValidatorService {
     }
 
 
-    public UserInfo validateIdToken(String idTokenString) throws AuthenticationException, GeneralSecurityException, IOException {
+    public UserInfoResponse validateIdToken(String idTokenString) throws AuthenticationException, GeneralSecurityException, IOException {
         GoogleIdToken idToken = verifier.verify(idTokenString);
         if (idToken != null) {
             GoogleIdToken.Payload payload = idToken.getPayload();
@@ -55,16 +59,18 @@ public class GoogleTokenValidatorService {
             String familyName = (String) payload.get("family_name");
             String givenName = (String) payload.get("given_name");
 
-            switch(email) {
-                case "alok.ku.singh@gmail.com" -> {
-                    return new UserInfo(userId, name, email, UserRole.ADMIN);
-                }
-                case "rachna2589@gmail.com", "a202.jyothigt@gmail.com" -> {
-                    return new UserInfo(userId, name, email, UserRole.USER);
-                }
-                default -> throw new UserNotAuthorizedException(email + " is not authorized");
+            User user = userRepository.getUserByEmail(email);
+
+            if (user == null) {
+                throw new UserNotAuthorizedException(email + " is not authorized");
             }
 
+            return new UserInfoResponse(
+                    userId,
+                    name,
+                    email,
+                    user.getRoles().stream().findAny().get().getName()
+            );
         } else {
             System.out.println("Invalid ID token.");
             throw new InvalidTokenException("Token is either tampered/expired/wrong audience");

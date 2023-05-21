@@ -1,8 +1,8 @@
-package com.alok.security.oauth2.google.controller;
+package com.alok.security.token.controller;
 
 import com.alok.home.commons.exception.NotABearerTokenException;
-import com.alok.security.model.UserInfo;
-import com.alok.security.oauth2.google.service.GoogleTokenValidatorService;
+import com.alok.security.model.UserInfoResponse;
+import com.alok.security.token.service.GoogleTokenValidatorService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +21,7 @@ public class GoogleTokenValidatorController {
     }
 
     @PostMapping("/id-token")
-    public ResponseEntity<UserInfo> validateIdToken(@RequestHeader("Authorization") String bearerToken) throws AuthenticationException, GeneralSecurityException, IOException {
+    public ResponseEntity<UserInfoResponse> validateIdToken(@RequestHeader("Authorization") String bearerToken) throws AuthenticationException, GeneralSecurityException, IOException {
 
         String token = null;
         if (bearerToken != null && bearerToken.startsWith("Bearer")) {

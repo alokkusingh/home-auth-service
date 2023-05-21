@@ -1,0 +1,28 @@
+oauth:
+  google:
+    client:
+      id: prod configured in Kubernetes ConfigMap. local configured as VM argument
+
+## MySQL Database
+spring:
+  datasource:
+    url: jdbc:mysql://mysql:3306/home-stack
+    username: root
+    password: password
+    driver-class-name:  com.mysql.cj.jdbc.Driver
+    hikari:
+      connection-timeout: 30000
+      minimum-idle: 10
+      maximum-pool-size:  10
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+        id:
+          new_generator_mappings: true
