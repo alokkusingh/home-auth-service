@@ -2,6 +2,7 @@ package com.alok.security.token.service;
 
 import com.alok.home.commons.exception.InvalidTokenException;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.beans.factory.annotation.Value;
@@ -86,8 +87,12 @@ public class JwtUtilsService {
     }
 
     public String validateToken(String token, String subject, String audience) {
-        if (Boolean.TRUE.equals(isTokenExpired(token))) {
-            throw new InvalidTokenException("token expired");
+        try {
+            if (Boolean.TRUE.equals(isTokenExpired(token))) {
+                throw new InvalidTokenException("token expired");
+            }
+        } catch (ExpiredJwtException eje) {
+            throw new InvalidTokenException(eje.getMessage());
         }
 
         Claims claims = getAllClaimsFromToken(token);

@@ -1,7 +1,7 @@
 package com.alok.security.token.controller;
 
 import com.alok.home.commons.exception.NotABearerTokenException;
-import com.alok.security.model.ApplicationInfoResponse;
+import com.alok.security.model.UserInfoResponse;
 import com.alok.security.model.oauth2.GrantType;
 import com.alok.security.model.oauth2.Scope;
 import com.alok.security.model.oauth2.TokenResponse;
@@ -30,11 +30,11 @@ public class HomeTokenController {
     }
 
     @PostMapping("/validate")
-    public ResponseEntity<ApplicationInfoResponse> validateToken(
+    public ResponseEntity<UserInfoResponse> validateToken(
             @RequestHeader("Authorization") String bearerToken,
             @RequestHeader("subject") String subject,
             @RequestHeader("audience") String audience
-    ) throws AuthenticationException, GeneralSecurityException, IOException {
+    ) {
 
         String token = null;
         if (bearerToken != null && bearerToken.startsWith("Bearer")) {
@@ -45,8 +45,10 @@ public class HomeTokenController {
 
         return ResponseEntity
                 .ok()
-                .body(new ApplicationInfoResponse(
+                .body(new UserInfoResponse(
+                        null,
                         subject,
+                        null,
                         homeTokenService.validateToken(token, subject, audience)
                 ));
     }
