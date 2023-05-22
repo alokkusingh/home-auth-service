@@ -17,13 +17,16 @@ public class HomeTokenService {
 
 
     private Integer validity;
+    private String issuer;
     private JwtUtilsService jwtUtilsService;
 
     public HomeTokenService(
-            @Value("${application.security.jwt.validity}")Integer validity,
+            @Value("${application.security.jwt.validity}") Integer validity,
+            @Value("${application.id}") String issuer,
             JwtUtilsService jwtUtilsService
     ) {
         this.validity = validity;
+        this.issuer = issuer;
         this.jwtUtilsService = jwtUtilsService;
     }
 
@@ -43,7 +46,7 @@ public class HomeTokenService {
             throw new InvalidParameterException("client not authorized to get token with given scope");
         }
 
-        return new TokenSuccessResponse(jwtUtilsService.generateToken(name, scope.name()), GrantType.client_credentials, scope, validity);
+        return new TokenSuccessResponse(jwtUtilsService.generateToken(name, scope.name()), GrantType.client_credentials, scope, validity, issuer);
     }
 
     public String validateToken(String token, String sub, String aud) {
