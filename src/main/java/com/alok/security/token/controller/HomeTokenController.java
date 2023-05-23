@@ -55,7 +55,7 @@ public class HomeTokenController {
 
     @PostMapping("/generate")
     public ResponseEntity<TokenResponse> generateToken(
-            @RequestHeader("grant_type") GrantType grantType,
+            @RequestHeader("grant-type") GrantType grantType,
             @RequestHeader("scope") Scope scope,
             Principal principal
     ) {
