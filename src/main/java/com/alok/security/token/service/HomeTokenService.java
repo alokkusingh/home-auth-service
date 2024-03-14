@@ -33,7 +33,8 @@ public class HomeTokenService {
     public TokenResponse generateClientAccessToken(
             String name,
             Collection<? extends GrantedAuthority> authorities,
-            Scope scope
+            Scope scope,
+            String audience
     ) {
         Optional<? extends GrantedAuthority> matchedScope = authorities.stream()
                 .filter(grantedAuthority -> grantedAuthority
@@ -46,7 +47,7 @@ public class HomeTokenService {
             throw new InvalidParameterException("client not authorized to get token with given scope");
         }
 
-        return new TokenSuccessResponse(jwtUtilsService.generateToken(name, scope.name()), GrantType.client_credentials, scope, validity, issuer);
+        return new TokenSuccessResponse(jwtUtilsService.generateToken(name, scope.name(), audience), GrantType.client_credentials, scope, validity, issuer);
     }
 
     public String validateToken(String token, String sub, String aud) {

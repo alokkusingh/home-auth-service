@@ -13,9 +13,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.naming.AuthenticationException;
-import java.io.IOException;
-import java.security.GeneralSecurityException;
+import javax.sql.DataSource;
 import java.security.InvalidParameterException;
 import java.security.Principal;
 
@@ -25,8 +23,11 @@ public class HomeTokenController {
 
     private HomeTokenService homeTokenService;
 
-    public HomeTokenController(HomeTokenService homeTokenService) {
+    private DataSource dataSource;
+
+    public HomeTokenController(HomeTokenService homeTokenService, DataSource dataSource) {
         this.homeTokenService = homeTokenService;
+        this.dataSource = dataSource;
     }
 
     @PostMapping("/validate")
@@ -57,6 +58,7 @@ public class HomeTokenController {
     public ResponseEntity<TokenResponse> generateToken(
             @RequestHeader("grant-type") GrantType grantType,
             @RequestHeader("scope") Scope scope,
+            @RequestHeader(value = "audience", required = false, defaultValue = "home-stack-api") String audience,
             Principal principal
     ) {
 
@@ -67,7 +69,8 @@ public class HomeTokenController {
                         .body(homeTokenService.generateClientAccessToken(
                                 principal.getName(),
                                 ((Authentication) principal).getAuthorities(),
-                                scope
+                                scope,
+                                audience
                         ));
             }
             default -> throw new InvalidParameterException("invalid_grant: only client_credentials grant is supported");

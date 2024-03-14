@@ -62,6 +62,12 @@ public class JwtUtilsService {
         return doGenerateToken(claims, subject);
     }
 
+    public String generateToken(String subject, String scope, String audience) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("auth", scope);
+        return doGenerateToken(claims, subject, audience);
+    }
+
     //while creating the token -
     //1. Define  claims of the token, like Issuer, Expiration, Subject, and the ID
     //2. Sign the JWT using the HS512 algorithm and secret key.
@@ -69,11 +75,15 @@ public class JwtUtilsService {
     //   compaction of the JWT to a URL-safe string
     private String doGenerateToken(Map<String, Object> claims, String subject) {
 
+        return doGenerateToken(claims, subject, "home-stack-api");
+    }
+
+    private String doGenerateToken(Map<String, Object> claims, String subject, String audience) {
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(subject)
                 .setIssuer("home-stack-auth")
-                .setAudience("home-stack-api")
+                .setAudience(audience)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + validity * 1000))
                 .signWith(SignatureAlgorithm.HS256, secret)
