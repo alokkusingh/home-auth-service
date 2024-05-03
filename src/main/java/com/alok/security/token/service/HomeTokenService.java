@@ -16,9 +16,9 @@ import java.util.Optional;
 public class HomeTokenService {
 
 
-    private Integer validity;
-    private String issuer;
-    private JwtUtilsService jwtUtilsService;
+    private final Integer validity;
+    private final String issuer;
+    private final JwtUtilsService jwtUtilsService;
 
     public HomeTokenService(
             @Value("${application.security.jwt.validity}") Integer validity,

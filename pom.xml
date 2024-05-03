@@ -30,7 +30,7 @@
 		<dependency>
 			<groupId>com.alok.home</groupId>
 			<artifactId>home-commons</artifactId>
-			<version>1.7.0</version>
+			<version>1.15.1</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.springframework.boot</groupId>
