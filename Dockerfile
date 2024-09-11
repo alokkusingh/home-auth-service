@@ -1,4 +1,4 @@
-FROM arm64v8/openjdk:17
+FROM arm64v8/openjdk:21
 MAINTAINER Alok Singh (alok.ku.singh@gmail.com)
 RUN groupadd -g 600 singh && useradd -u 601 -g 600 alok
 ARG JAR_FILE
