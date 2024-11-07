@@ -17,26 +17,23 @@ public class BucketFactoryBuilder {
     private boolean intialized;
 
 
-
     public synchronized AbstractBucketFactory build() {
         if (intialized) {
             throw new AssertionError("Rate Limit Bucket already created");
         }
 
-        if (type == null || type == BucketFactoryType.IN_MEMEORY) {
-            return InMemoryBucketFactory.getInstance();
-        }
-
-        if (type == BucketFactoryType.POSTGRESQL) {
-            if (Objects.isNull(dataSource)) {
-                throw new AssertionError("DataSource object must be provided for POSTGRESQL Factory Type");
-            }
-            return PostgresqlBucketFactory.getInstance(dataSource);
-        }
-
         intialized = true;
 
-        return null;
+        return switch (type) {
+            case null -> InMemoryBucketFactory.getInstance();
+            case IN_MEMEORY -> InMemoryBucketFactory.getInstance();
+            case POSTGRESQL -> {
+                if (Objects.isNull(dataSource)) {
+                    throw new AssertionError("DataSource object must be provided for POSTGRESQL Factory Type");
+                }
+                yield PostgresqlBucketFactory.getInstance(dataSource);
+            }
+        };
     }
 
     public BucketFactoryBuilder setType(BucketFactoryType type) {

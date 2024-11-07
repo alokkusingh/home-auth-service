@@ -10,7 +10,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class InMemoryBucketFactory extends AbstractBucketFactory {
+public final class InMemoryBucketFactory extends AbstractBucketFactory {
 
     private final Logger log = LoggerFactory.getLogger(InMemoryBucketFactory.class);
     private static volatile InMemoryBucketFactory instance;

@@ -16,7 +16,7 @@ import javax.sql.DataSource;
 import java.time.Duration;
 import java.util.UUID;
 
-public class PostgresqlBucketFactory extends AbstractBucketFactory {
+public final class PostgresqlBucketFactory extends AbstractBucketFactory {
 
     private final Logger log = LoggerFactory.getLogger(PostgresqlBucketFactory.class);
     private static volatile PostgresqlBucketFactory instance;

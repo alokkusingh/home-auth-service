@@ -2,7 +2,7 @@ package com.alok.security.utils.ratelimit.factory;
 
 import io.github.bucket4j.Bucket;
 
-public abstract class AbstractBucketFactory {
+public sealed abstract class AbstractBucketFactory permits InMemoryBucketFactory, PostgresqlBucketFactory {
 
     public abstract Bucket resolveBucket(String id);
 
