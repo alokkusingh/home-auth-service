@@ -1,6 +1,6 @@
 package com.alok.security.token.controller;
 
-import com.alok.home.commons.exception.NotABearerTokenException;
+import com.alok.home.commons.dto.exception.NotABearerTokenException;
 import com.alok.security.model.UserInfoResponse;
 import com.alok.security.token.service.GoogleTokenValidatorService;
 import org.springframework.http.ResponseEntity;

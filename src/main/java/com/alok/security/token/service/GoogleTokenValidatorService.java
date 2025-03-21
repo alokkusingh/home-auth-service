@@ -1,7 +1,5 @@
 package com.alok.security.token.service;
 
-import com.alok.home.commons.exception.InvalidTokenException;
-import com.alok.home.commons.exception.UserNotAuthorizedException;
 import com.alok.security.dao.User;
 import com.alok.security.model.UserInfoResponse;
 import com.alok.security.repository.UserRepository;
@@ -11,6 +9,8 @@ import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import com.alok.home.commons.dto.exception.UserNotAuthorizedException;
+import com.alok.home.commons.dto.exception.InvalidTokenException;
 
 import javax.naming.AuthenticationException;
 import java.io.IOException;
@@ -21,20 +21,22 @@ import java.util.Collections;
 public class GoogleTokenValidatorService {
 
 
-    private String goggleOauthClientId;
-    private GoogleIdTokenVerifier verifier;
-    private UserRepository userRepository;
+    private final GoogleIdTokenVerifier verifier;
+    private final UserRepository userRepository;
+    private final EmailService emailService;
+
 
     public GoogleTokenValidatorService(
             @Value("${oauth.google.client.id}") String goggleOauthClientId,
-            UserRepository userRepository) throws GeneralSecurityException, IOException {
-        this.goggleOauthClientId = goggleOauthClientId;
+            UserRepository userRepository, EmailService emailService
+    ) throws GeneralSecurityException, IOException {
         this.userRepository = userRepository;
+        this.emailService = emailService;
 
-        System.out.println("goggleOauthClientId: " + this.goggleOauthClientId);
+        System.out.println("goggleOauthClientId: " + goggleOauthClientId);
         verifier = new GoogleIdTokenVerifier.Builder(GoogleNetHttpTransport.newTrustedTransport(), JacksonFactory.getDefaultInstance())
                 // Specify the CLIENT_ID of the app that accesses the backend:
-                .setAudience(Collections.singletonList(this.goggleOauthClientId))
+                .setAudience(Collections.singletonList(goggleOauthClientId))
                 // Or, if multiple clients access the backend:
                 //.setAudience(Arrays.asList(CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3)
                 .build();
@@ -52,7 +54,7 @@ public class GoogleTokenValidatorService {
 
             // Get profile information from payload
             String email = payload.getEmail();
-            boolean emailVerified = Boolean.valueOf(payload.getEmailVerified());
+            boolean emailVerified = payload.getEmailVerified();
             String name = (String) payload.get("name");
             String pictureUrl = (String) payload.get("picture");
             String locale = (String) payload.get("locale");
@@ -62,6 +64,15 @@ public class GoogleTokenValidatorService {
             User user = userRepository.getUserByEmail(email);
 
             if (user == null) {
+                // TODO: send email notification
+
+                try {
+                    emailService.sendEmail("Unauthorized Access Alert", "User " + email + " tried to access Home Stack");
+                } catch (RuntimeException rte) {
+                    rte.printStackTrace();
+                    System.out.println("Failed to send email, error: "  + rte.getMessage());
+                }
+
                 throw new UserNotAuthorizedException(email + " is not authorized");
             }
 

@@ -1,6 +1,6 @@
 package com.alok.security.token.service;
 
-import com.alok.home.commons.exception.InvalidTokenException;
+import com.alok.home.commons.dto.exception.InvalidTokenException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;

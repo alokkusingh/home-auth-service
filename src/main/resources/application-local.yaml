@@ -29,3 +29,11 @@ spring:
 
 server:
   port: 8082
+
+email:
+  url: https://hdash.alok.digital/home/email/send
+  token:
+    issuer: home-stack-auth
+    url: https://hdash.alok.digital/home/auth/home/token/generate
+    scope: home_api_rw
+    audience: home-stack-email

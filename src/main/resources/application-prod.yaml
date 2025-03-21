@@ -26,3 +26,11 @@ spring:
         format_sql: true
         id:
           new_generator_mappings: true
+
+email:
+  url: http://home-email-service:8081/home/email/send
+  token:
+    issuer: home-stack-auth
+    url: http://home-auth-service:8081/home/auth/home/token/generate
+    scope: home_api_rw
+    audience: home-stack-email

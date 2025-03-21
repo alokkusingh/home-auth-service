@@ -16,4 +16,3 @@ application:
   security:
     jwt:
       validity: 1800
-
