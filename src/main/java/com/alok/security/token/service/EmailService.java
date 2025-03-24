@@ -2,6 +2,7 @@ package com.alok.security.token.service;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import com.alok.home.commons.dto.EmailRequest;
@@ -21,6 +22,7 @@ public class EmailService {
         this.emailUrl = emailUrl;
     }
 
+    @Async
     public void sendEmail(
             String subject, String body
     ) {
