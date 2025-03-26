@@ -5,6 +5,7 @@ import com.alok.security.model.UserInfoResponse;
 import com.alok.security.model.oauth2.GrantType;
 import com.alok.security.model.oauth2.Scope;
 import com.alok.security.model.oauth2.TokenResponse;
+import com.alok.security.token.service.EmailService;
 import com.alok.security.token.service.HomeTokenService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -21,13 +22,14 @@ import java.security.Principal;
 @RestController
 public class HomeTokenController {
 
-    private HomeTokenService homeTokenService;
+    private final HomeTokenService homeTokenService;
+    private final DataSource dataSource;
+    private final EmailService emailService;
 
-    private DataSource dataSource;
-
-    public HomeTokenController(HomeTokenService homeTokenService, DataSource dataSource) {
+    public HomeTokenController(HomeTokenService homeTokenService, DataSource dataSource, EmailService emailService) {
         this.homeTokenService = homeTokenService;
         this.dataSource = dataSource;
+        this.emailService = emailService;
     }
 
     @PostMapping("/validate")
@@ -41,6 +43,7 @@ public class HomeTokenController {
         if (bearerToken != null && bearerToken.startsWith("Bearer")) {
             token = bearerToken.substring(7);
         } else {
+            emailService.sendEmail("Unauthenticated Access Alert", "Tried to access Home Stack API without a Bearer token");
             throw new NotABearerTokenException("Token is not a valid Bearer token");
         }
 

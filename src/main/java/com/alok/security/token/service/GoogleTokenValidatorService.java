@@ -64,15 +64,7 @@ public class GoogleTokenValidatorService {
             User user = userRepository.getUserByEmail(email);
 
             if (user == null) {
-                // TODO: send email notification
-
-                try {
-                    emailService.sendEmail("Unauthorized Access Alert", "User " + email + " tried to access Home Stack");
-                } catch (RuntimeException rte) {
-                    rte.printStackTrace();
-                    System.out.println("Failed to send email, error: "  + rte.getMessage());
-                }
-
+                emailService.sendEmail("Unauthorized Access Alert", "User " + email + " tried to access Home Stack");
                 throw new UserNotAuthorizedException(email + " is not authorized");
             }
 

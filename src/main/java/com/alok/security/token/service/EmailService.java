@@ -34,6 +34,12 @@ public class EmailService {
                 )
         );
 
-        emailRestTemplate.postForEntity(emailUrl, request, String.class);
+        try {
+            emailRestTemplate.postForEntity(emailUrl, request, String.class);
+        } catch (RuntimeException rte) {
+            rte.printStackTrace();
+            System.out.println("Failed to send email, error: "  + rte.getMessage());
+        }
+
     }
 }
