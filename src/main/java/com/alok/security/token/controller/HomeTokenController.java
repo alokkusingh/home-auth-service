@@ -2,11 +2,11 @@ package com.alok.security.token.controller;
 
 import com.alok.home.commons.dto.exception.NotABearerTokenException;
 import com.alok.security.model.UserInfoResponse;
-import com.alok.security.model.oauth2.GrantType;
-import com.alok.security.model.oauth2.Scope;
-import com.alok.security.model.oauth2.TokenResponse;
+import com.alok.security.model.oauth2.*;
 import com.alok.security.token.service.EmailService;
 import com.alok.security.token.service.HomeTokenService;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,7 +14,9 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.sql.DataSource;
+import javax.naming.AuthenticationException;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.security.InvalidParameterException;
 import java.security.Principal;
 
@@ -23,23 +25,21 @@ import java.security.Principal;
 public class HomeTokenController {
 
     private final HomeTokenService homeTokenService;
-    private final DataSource dataSource;
     private final EmailService emailService;
 
-    public HomeTokenController(HomeTokenService homeTokenService, DataSource dataSource, EmailService emailService) {
+    public HomeTokenController(HomeTokenService homeTokenService, EmailService emailService) {
         this.homeTokenService = homeTokenService;
-        this.dataSource = dataSource;
         this.emailService = emailService;
     }
 
     @PostMapping("/validate")
     public ResponseEntity<UserInfoResponse> validateToken(
             @RequestHeader("Authorization") String bearerToken,
-            @RequestHeader("subject") String subject,
-            @RequestHeader("audience") String audience
+            @RequestHeader(value = "subject", required = false) String subject,
+            @RequestHeader(value = "audience", required = false, defaultValue = "home-stack") String audience
     ) {
 
-        String token = null;
+        String token;
         if (bearerToken != null && bearerToken.startsWith("Bearer")) {
             token = bearerToken.substring(7);
         } else {
@@ -49,22 +49,16 @@ public class HomeTokenController {
 
         return ResponseEntity
                 .ok()
-                .body(new UserInfoResponse(
-                        null,
-                        subject,
-                        null,
-                        homeTokenService.validateToken(token, subject, audience)
-                ));
+                .body(homeTokenService.validateToken(token, subject, audience));
     }
 
     @PostMapping("/generate")
     public ResponseEntity<TokenResponse> generateToken(
             @RequestHeader("grant-type") GrantType grantType,
             @RequestHeader("scope") Scope scope,
-            @RequestHeader(value = "audience", required = false, defaultValue = "home-stack-api") String audience,
+            @RequestHeader("audience") String audience,
             Principal principal
     ) {
-
         switch (grantType) {
             case client_credentials -> {
                 return ResponseEntity
@@ -76,7 +70,67 @@ public class HomeTokenController {
                                 audience
                         ));
             }
+            case token_exchange -> {
+                return ResponseEntity
+                        .unprocessableEntity()
+                        .body(new TokenErrorResponse("unsupported_grant_type", "The token_exchange grant type is not supported for Basic Auth"));
+            }
             default -> throw new InvalidParameterException("invalid_grant: only client_credentials grant is supported");
         }
+    }
+
+    @PostMapping("/exchange")
+    public ResponseEntity<TokenResponse> exchangeToken(
+            @RequestHeader("Authorization") String bearerToken,
+            @RequestHeader("token-provider") TokenProvider tokenProvider,
+            @RequestHeader("grant-type") GrantType grantType,
+            @RequestHeader(value = "audience", required = false, defaultValue = "home-stack") String audience,
+            @RequestHeader(value = "secure", required = false, defaultValue = "true") Boolean secure,
+            HttpServletResponse response
+    ) throws AuthenticationException, GeneralSecurityException, IOException {
+
+        String token;
+        if (bearerToken != null && bearerToken.startsWith("Bearer")) {
+            token = bearerToken.substring(7);
+        } else {
+            emailService.sendEmail("Unauthenticated Access Alert", "Tried to access Home Stack API without a Bearer token");
+            throw new NotABearerTokenException("Token is not a valid Bearer token");
+        }
+
+        return switch (grantType) {
+            case token_exchange -> {
+                TokenSuccessResponse tokenResponse = (TokenSuccessResponse) homeTokenService.exchangeAccessTokenUsingIdToken(
+                        token,
+                        tokenProvider,
+                        audience
+                );
+
+                // Set token in cookie
+                var cookie = new Cookie("HOME_STACK_ACCESS_TOKEN", tokenResponse.accessToken());
+                cookie.setHttpOnly(true);
+                cookie.setPath("/");
+                cookie.setMaxAge(tokenResponse.expiresIn());
+                cookie.setSecure(secure);
+                response.addCookie(cookie);
+
+                // TODO: set token scope to user and use in commons filter to derive the validation request parameter
+                cookie = new Cookie("TOKEN_SCOPE", "user");
+                cookie.setHttpOnly(true);
+                cookie.setPath("/");
+                cookie.setMaxAge(tokenResponse.expiresIn());
+                cookie.setSecure(secure);
+                response.addCookie(cookie);
+
+                yield ResponseEntity
+                        .ok()
+                        .body(tokenResponse);
+            }
+            case refresh_token -> ResponseEntity
+                    .unprocessableEntity()
+                    .body(new TokenErrorResponse("unsupported_grant_type", "The refresh_token grant type is not supported yet"));
+            case client_credentials -> ResponseEntity
+                    .unprocessableEntity()
+                    .body(new TokenErrorResponse("unsupported_grant_type", "The client_credentials grant type is not supported for exchange"));
+        };
     }
 }

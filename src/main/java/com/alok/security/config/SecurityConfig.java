@@ -56,6 +56,7 @@ public class SecurityConfig {
                     auth.requestMatchers("/actuator", "/actuator/**").permitAll();
                     auth.requestMatchers("/google/validate/id-token").permitAll();
                     auth.requestMatchers("/home/token/validate").permitAll();
+                    auth.requestMatchers("/home/token/exchange").permitAll();
                     auth.requestMatchers("/home/token/generate").hasAnyRole("home_api_ro", "home_api_rw");
 
                     auth.anyRequest().authenticated();

@@ -25,6 +25,9 @@ public class JwtUtilsService {
     @Value("${application.security.jwt.validity}")
     private Integer validity;
 
+    private final String ISSUER = "home-stack-auth";
+    private final String DEFAULT_SUBJECT = "home-stack";
+
     //retrieve username from jwt token
     public String getUsernameFromToken(String token) {
         return getClaimFromToken(token, Claims::getSubject);
@@ -39,7 +42,7 @@ public class JwtUtilsService {
         final Claims claims = getAllClaimsFromToken(token);
         return claimsResolver.apply(claims);
     }
-    //for retrieveing any information from token we will need the secret key
+    //for retrieving any information from token we will need the secret key
     private Claims getAllClaimsFromToken(String token) {
         return Jwts.parser().setSigningKey(secret).parseClaimsJws(token).getBody();
     }
@@ -53,7 +56,15 @@ public class JwtUtilsService {
     //generate token for user
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
+        claims.put("auth", userDetails.getAuthorities().stream().findAny().get().getAuthority());
         return doGenerateToken(claims, userDetails.getUsername());
+    }
+
+    //generate token for user
+    public String generateToken(UserDetails userDetails, String audience) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("auth", userDetails.getAuthorities().stream().findAny().get().getAuthority());
+        return doGenerateToken(claims, userDetails.getUsername(), audience);
     }
 
     public String generateToken(String subject, String scope) {
@@ -75,14 +86,14 @@ public class JwtUtilsService {
     //   compaction of the JWT to a URL-safe string
     private String doGenerateToken(Map<String, Object> claims, String subject) {
 
-        return doGenerateToken(claims, subject, "home-stack-api");
+        return doGenerateToken(claims, subject, DEFAULT_SUBJECT);
     }
 
     private String doGenerateToken(Map<String, Object> claims, String subject, String audience) {
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(subject)
-                .setIssuer("home-stack-auth")
+                .setIssuer(ISSUER)
                 .setAudience(audience)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + validity * 1000))
@@ -111,14 +122,20 @@ public class JwtUtilsService {
             throw new InvalidTokenException("untrusted token issuer");
         }
 
-        if (!claims.getSubject().equals(subject)) {
+        if (subject != null && !claims.getSubject().equals(subject)) {
             throw new InvalidTokenException("token not provided for the subject");
         }
 
-        if (!claims.getAudience().equals(audience)) {
-            throw new InvalidTokenException("token not provided for the audience");
+        if (audience == null || audience.isBlank()) {
+            if (!claims.getAudience().equals(DEFAULT_SUBJECT)) {
+                throw new InvalidTokenException("token not provided for the audience");
+            }
+        } else {
+            if (!claims.getAudience().equals(audience)) {
+                throw new InvalidTokenException("token not provided for the audience");
+            }
         }
 
-        return (String)claims.get("auth");
+        return claims.getSubject();
     }
 }

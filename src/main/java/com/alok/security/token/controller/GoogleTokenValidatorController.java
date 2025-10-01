@@ -34,6 +34,6 @@ public class GoogleTokenValidatorController {
             throw new NotABearerTokenException("Token is not a valid Bearer token");
         }
         return ResponseEntity.ok()
-                .body(googleTokenValidatorService.validateIdToken(token));
+                .body(googleTokenValidatorService.validateIdTokenAndGetUserInfo(token));
     }
 }

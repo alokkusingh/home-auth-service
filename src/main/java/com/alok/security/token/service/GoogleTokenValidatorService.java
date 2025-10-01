@@ -43,7 +43,7 @@ public class GoogleTokenValidatorService {
     }
 
 
-    public UserInfoResponse validateIdToken(String idTokenString) throws AuthenticationException, GeneralSecurityException, IOException {
+    public UserInfoResponse validateIdTokenAndGetUserInfo(String idTokenString) throws GeneralSecurityException, IOException {
         GoogleIdToken idToken = verifier.verify(idTokenString);
         if (idToken != null) {
             GoogleIdToken.Payload payload = idToken.getPayload();
@@ -78,6 +78,5 @@ public class GoogleTokenValidatorService {
             System.out.println("Invalid ID token.");
             throw new InvalidTokenException("Token is either tampered/expired/wrong audience");
         }
-
     }
 }
