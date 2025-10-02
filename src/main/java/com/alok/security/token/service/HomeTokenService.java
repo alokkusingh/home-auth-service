@@ -17,6 +17,7 @@ import java.security.GeneralSecurityException;
 import java.security.InvalidParameterException;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Service
 public class HomeTokenService {
@@ -86,6 +87,10 @@ public class HomeTokenService {
 
         var email = jwtUtilsService.validateToken(token, sub, aud);
 
+        if (!patternMatches(email)) {
+            email += "@home-stack.com";
+        }
+
         User user = userRepository.getUserByEmail(email);
 
         if (user == null) {
@@ -98,5 +103,14 @@ public class HomeTokenService {
                 email,
                 user.getRoles().stream().findAny().get().getName()
         );
+    }
+
+    private boolean patternMatches(String emailAddress) {
+        String EMAIL_REGEX = "^(?=.{1,64}@)[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*@"
+                + "[^-][A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*(\\.[A-Za-z]{2,})$";
+
+        return Pattern.compile(EMAIL_REGEX)
+                .matcher(emailAddress)
+                .matches();
     }
 }
