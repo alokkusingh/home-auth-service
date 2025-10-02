@@ -30,7 +30,7 @@ public class HomeTokenService {
     private final UserRepository userRepository;
 
     public HomeTokenService(
-            @Value("${application.security.jwt.validity}") Integer validity,
+            @Value("${application.security.jwt.access-token.validity}") Integer validity,
             @Value("${application.id}") String issuer,
             JwtUtilsService jwtUtilsService,
             GoogleTokenValidatorService googleTokenValidatorService,
@@ -67,19 +67,35 @@ public class HomeTokenService {
             String idToken,
             TokenProvider tokenProvider,
             String audience
-    ) throws AuthenticationException, GeneralSecurityException, IOException {
+    ) throws GeneralSecurityException, IOException {
 
         var userInfo = switch (tokenProvider) {
             case GOOGLE -> googleTokenValidatorService.validateIdTokenAndGetUserInfo(idToken);
             default -> throw new InvalidParameterException("unsupported token provider");
         };
 
+        var accessToken = jwtUtilsService.generateToken(
+                new CustomUserDetails(new UserInfo(userInfo.id(), userInfo.name(), userInfo.email(), userInfo.userRole())),
+                audience
+        );
         return new TokenSuccessResponse(
-                jwtUtilsService.generateToken(
-                        new CustomUserDetails(new UserInfo(userInfo.id(), userInfo.name(), userInfo.email(), userInfo.userRole())),
-                        audience
-                ),
-                TokenType.Bearer, Scope.user, validity, issuer, null
+                accessToken,
+                TokenType.Bearer, Scope.user, validity, issuer,
+                jwtUtilsService.generateRefreshToken(accessToken)
+        );
+    }
+
+    public TokenResponse exchangeAccessTokenUsingRefreshToken(
+            String refreshToken
+    ) {
+
+        jwtUtilsService.validateRefreshToken(refreshToken);
+
+        var accessToken = jwtUtilsService.generateToken(refreshToken);
+        return new TokenSuccessResponse(
+                accessToken,
+                TokenType.Bearer, Scope.user, validity, issuer,
+                jwtUtilsService.generateRefreshToken(accessToken)
         );
     }
 

@@ -5,6 +5,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.impl.DefaultClaims;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -17,16 +18,25 @@ import java.util.function.Function;
 @Service
 public class JwtUtilsService {
 
-    @Value("${application.id}")
-    private String applicationId;
-    @Value("${application.security.jwt.secret}")
-    private String secret;
 
-    @Value("${application.security.jwt.validity}")
-    private Integer validity;
+    private final String applicationId;
+    private final String secret;
+    private final Integer accessTokenValidity;
+    private final Integer refreshTokenValidity; // 7 days
 
-    private final String ISSUER = "home-stack-auth";
     private final String DEFAULT_SUBJECT = "home-stack";
+
+    public JwtUtilsService(
+            @Value("${application.id}") String applicationId,
+            @Value("${application.security.jwt.secret}") String secret,
+            @Value("${application.security.jwt.access-token.validity}") Integer accessTokenValidity,
+            @Value("${application.security.jwt.refresh-token.validity}") Integer refreshTokenValidity
+    ) {
+        this.applicationId = applicationId;
+        this.secret = secret;
+        this.accessTokenValidity = accessTokenValidity;
+        this.refreshTokenValidity = refreshTokenValidity;
+    }
 
     //retrieve username from jwt token
     public String getUsernameFromToken(String token) {
@@ -79,6 +89,18 @@ public class JwtUtilsService {
         return doGenerateToken(claims, subject, audience);
     }
 
+    public String generateToken(String refreshToken) {
+        Claims claims = getAllClaimsFromToken(refreshToken);
+        Claims newClaims = new DefaultClaims();
+        newClaims.put("auth", claims.get("auth"));
+        return this.doGenerateToken(newClaims, claims.getSubject(), claims.get("for", String.class));
+    }
+
+    public String generateRefreshToken(String accessToken) {
+        Claims claims = getAllClaimsFromToken(accessToken);
+        return doGenerateRefreshToken(claims, claims.getSubject(), claims.getAudience());
+    }
+
     //while creating the token -
     //1. Define  claims of the token, like Issuer, Expiration, Subject, and the ID
     //2. Sign the JWT using the HS512 algorithm and secret key.
@@ -93,10 +115,24 @@ public class JwtUtilsService {
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(subject)
-                .setIssuer(ISSUER)
+                .setIssuer(applicationId)
                 .setAudience(audience)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + validity * 1000))
+                .setExpiration(new Date(System.currentTimeMillis() + accessTokenValidity * 1000))
+                .signWith(SignatureAlgorithm.HS256, secret)
+                .compact();
+    }
+
+    private String doGenerateRefreshToken(Map<String, Object> claims, String subject, String audience) {
+
+        claims.put("for", audience);
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(subject)
+                .setIssuer(applicationId)
+                .setAudience(applicationId) // refresh token is only for the issuer, this will prevent using as access token
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + refreshTokenValidity * 1000))
                 .signWith(SignatureAlgorithm.HS256, secret)
                 .compact();
     }
@@ -137,5 +173,25 @@ public class JwtUtilsService {
         }
 
         return claims.getSubject();
+    }
+
+    public void validateRefreshToken(String token) {
+        try {
+            if (Boolean.TRUE.equals(isTokenExpired(token))) {
+                throw new InvalidTokenException("token expired");
+            }
+        } catch (ExpiredJwtException eje) {
+            throw new InvalidTokenException(eje.getMessage());
+        }
+
+        Claims claims = getAllClaimsFromToken(token);
+
+        if (!claims.getIssuer().equals(applicationId)) {
+            throw new InvalidTokenException("untrusted token issuer");
+        }
+
+        if (!claims.getAudience().equals(applicationId)) {
+            throw new InvalidTokenException("invalid refresh token audience");
+        }
     }
 }

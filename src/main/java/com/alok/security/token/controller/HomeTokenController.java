@@ -82,7 +82,7 @@ public class HomeTokenController {
     @PostMapping("/exchange")
     public ResponseEntity<TokenResponse> exchangeToken(
             @RequestHeader("Authorization") String bearerToken,
-            @RequestHeader("token-provider") TokenProvider tokenProvider,
+            @RequestHeader(value = "token-provider", required = false) TokenProvider tokenProvider,
             @RequestHeader("grant-type") GrantType grantType,
             @RequestHeader(value = "audience", required = false, defaultValue = "home-stack") String audience,
             @RequestHeader(value = "secure", required = false, defaultValue = "true") Boolean secure,
@@ -113,7 +113,6 @@ public class HomeTokenController {
                 cookie.setSecure(secure);
                 response.addCookie(cookie);
 
-                // TODO: set token scope to user and use in commons filter to derive the validation request parameter
                 cookie = new Cookie("TOKEN_SCOPE", "user");
                 cookie.setHttpOnly(true);
                 cookie.setPath("/");
@@ -121,13 +120,15 @@ public class HomeTokenController {
                 cookie.setSecure(secure);
                 response.addCookie(cookie);
 
+                // For security reasons, do not set the REFRESH_TOKEN in cookie, to minimize network exposer of refresh token
+
                 yield ResponseEntity
                         .ok()
                         .body(tokenResponse);
             }
             case refresh_token -> ResponseEntity
-                    .unprocessableEntity()
-                    .body(new TokenErrorResponse("unsupported_grant_type", "The refresh_token grant type is not supported yet"));
+                    .ok()
+                    .body(homeTokenService.exchangeAccessTokenUsingRefreshToken(token));
             case client_credentials -> ResponseEntity
                     .unprocessableEntity()
                     .body(new TokenErrorResponse("unsupported_grant_type", "The client_credentials grant type is not supported for exchange"));
